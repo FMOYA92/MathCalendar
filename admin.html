@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — Panel de Recordatorios</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #0f0f1a;
+      color: #e0e0e0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ─── Banner ─── */
+    .site-banner {
+      position: relative;
+      width: 100%;
+      height: 100px;
+      flex-shrink: 0;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .site-banner::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: url('logo.png');
+      background-size: 60% auto;
+      background-position: center center;
+      background-repeat: no-repeat;
+      -webkit-mask-image:
+        linear-gradient(to right,  transparent, black 28%, black 72%, transparent),
+        linear-gradient(to bottom, transparent, black 22%, black 78%, transparent);
+      -webkit-mask-composite: source-in;
+      mask-image:
+        linear-gradient(to right,  transparent, black 28%, black 72%, transparent),
+        linear-gradient(to bottom, transparent, black 22%, black 78%, transparent);
+      mask-composite: intersect;
+    }
+
+    .banner-controls {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 22px;
+      z-index: 2;
+    }
+    .banner-controls-left  { display: flex; align-items: center; gap: 10px; }
+    .banner-controls-right { display: flex; align-items: center; gap: 10px; }
+
+    header h1 { font-size: 1.1rem; font-weight: 600; color: #a78bfa; letter-spacing: 0.05em; }
+
+    .admin-badge {
+      background: #4c1d95;
+      color: #ddd6fe;
+      font-size: 0.68rem;
+      padding: 3px 10px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 600;
+    }
+
+
+    #clock { font-size: 0.88rem; color: #94a3b8; font-variant-numeric: tabular-nums; }
+
+    .panel-link {
+      background: #0e4c64;
+      border: 1px solid #0e7490;
+      color: #7dd3fc;
+      text-decoration: none;
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-size: 0.82rem;
+      transition: background 0.2s;
+    }
+    .panel-link:hover { background: #0e7490; color: #fff; }
+
+    .logout-btn {
+      background: #1e1e3a;
+      border: 1px solid #7f1d1d;
+      color: #fca5a5;
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-size: 0.82rem;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.2s;
+    }
+    .logout-btn:hover { background: #7f1d1d; color: #fff; }
+
+    /* ─── Tabs ─── */
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid #2a2a4a;
+      padding: 0 24px;
+      background: #12121f;
+      flex-shrink: 0;
+    }
+
+    .tab-btn {
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      color: #64748b;
+      padding: 14px 22px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: color 0.2s, border-color 0.2s;
+      letter-spacing: 0.03em;
+    }
+    .tab-btn:hover { color: #a78bfa; }
+    .tab-btn.active      { color: #a78bfa; border-bottom-color: #7c3aed; }
+    .tab-btn.active-cyan { color: #38bdf8; border-bottom-color: #0e7490; }
+
+    /* ─── Contenido ─── */
+    .content { flex: 1; padding: 24px; max-width: 1100px; width: 100%; margin: 0 auto; }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ─── Sección header ─── */
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .section-title { font-size: 1rem; font-weight: 600; color: #a78bfa; text-transform: uppercase; letter-spacing: 0.1em; }
+    .section-title-cyan { color: #38bdf8; }
+
+    /* ─── Botones ─── */
+    .btn {
+      border: none;
+      border-radius: 8px;
+      padding: 8px 18px;
+      font-size: 0.82rem;
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: 500;
+      transition: background 0.2s;
+    }
+    .btn-purple { background: #4c1d95; color: #e0e0e0; }
+    .btn-purple:hover { background: #6d28d9; }
+    .btn-cyan   { background: #0e4c64; color: #e0e0e0; }
+    .btn-cyan:hover { background: #0e7490; }
+    .btn-danger { background: #7f1d1d; color: #e0e0e0; }
+    .btn-danger:hover { background: #b91c1c; }
+    .btn-ghost  { background: #1e1e3a; border: 1px solid #3a3a5a; color: #94a3b8; }
+    .btn-ghost:hover { background: #2a2a4a; }
+    .btn-sm   { padding: 4px 10px; font-size: 0.75rem; border-radius: 6px; }
+    .btn-icon { padding: 5px 8px;  font-size: 0.8rem;  border-radius: 6px; }
+
+    /* ─── Tabla ─── */
+    .table-wrap { overflow-x: auto; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 0.87rem; }
+
+    thead tr { border-bottom: 1px solid #2a2a4a; }
+    thead th {
+      text-align: left;
+      padding: 10px 12px;
+      color: #64748b;
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      white-space: nowrap;
+    }
+
+    tbody tr { border-bottom: 1px solid #1a1a2e; transition: background 0.15s; }
+    tbody tr:hover { background: #1a1a2e; }
+    tbody td { padding: 11px 12px; vertical-align: middle; }
+
+    .td-title { font-weight: 500; max-width: 280px; }
+    .td-title .desc { font-size: 0.75rem; color: #64748b; margin-top: 2px; }
+
+    .badge {
+      font-size: 0.68rem; padding: 2px 8px; border-radius: 20px;
+      font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap;
+    }
+    .badge-vencido { background: #27272a; color: #71717a; }
+
+    .actions-cell { display: flex; gap: 6px; align-items: center; }
+
+    .empty-row td { text-align: center; color: #4b5563; padding: 40px; font-size: 0.85rem; }
+
+    /* ─── Confirmación inline ─── */
+    .confirm-row {
+      display: none;
+      background: #1a0a0a;
+      border: 1px solid #7f1d1d;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.82rem;
+      color: #fca5a5;
+      align-items: center;
+      gap: 10px;
+      margin-top: 8px;
+    }
+    .confirm-row.open { display: flex; }
+
+    /* ─── Cards de cuentas regresivas ─── */
+    .cd-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 14px;
+    }
+
+    .countdown-card {
+      background: #0f172a;
+      border-radius: 12px;
+      padding: 16px;
+      border: 1px solid #1e3a5f;
+      position: relative;
+    }
+    .countdown-card.expired { border-color: #7f1d1d; background: #1a0a0a; }
+
+    .cd-card-actions { position: absolute; top: 10px; right: 10px; display: flex; gap: 5px; }
+
+    .countdown-label { font-size: 0.82rem; color: #7dd3fc; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; padding-right: 60px; }
+    .countdown-target { font-size: 0.72rem; color: #64748b; margin-bottom: 12px; }
+
+    .countdown-display { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .cd-unit { background: #1e293b; border-radius: 8px; padding: 8px 4px; text-align: center; }
+    .cd-value { font-size: 1.2rem; font-weight: 700; color: #38bdf8; font-variant-numeric: tabular-nums; line-height: 1; }
+    .cd-label-unit { font-size: 0.58rem; color: #64748b; margin-top: 3px; text-transform: uppercase; }
+    .countdown-card.expired .cd-value { color: #f87171; }
+    .expired-msg { text-align: center; color: #f87171; font-size: 0.8rem; font-weight: 600; padding: 8px 0 2px; }
+
+    /* ─── Modales ─── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.72);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: #1a1a2e;
+      border-radius: 16px;
+      padding: 28px;
+      width: 480px;
+      max-width: 95vw;
+      border: 1px solid #2a2a4a;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+
+    .modal h2 { font-size: 1rem; color: #a78bfa; margin-bottom: 20px; font-weight: 600; }
+    .modal h2.cyan { color: #38bdf8; }
+
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 0.78rem; color: #94a3b8; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%;
+      background: #0f0f1a;
+      border: 1px solid #3a3a5a;
+      border-radius: 8px;
+      padding: 9px 12px;
+      color: #e0e0e0;
+      font-size: 0.88rem;
+      outline: none;
+      font-family: inherit;
+      transition: border-color 0.2s;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #7c3aed; }
+    .form-group textarea { resize: vertical; min-height: 70px; }
+
+    .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+  </style>
+</head>
+<body>
+
+<div class="site-banner">
+  <div class="banner-controls">
+    <div class="banner-controls-left">
+      <h1>⚙ Panel Admin</h1>
+      <span class="admin-badge" id="activeUser"></span>
+    </div>
+    <div class="banner-controls-right">
+      <div id="clock"></div>
+      <a href="index.html" class="panel-link">← Ver Panel</a>
+      <button onclick="logout()" class="logout-btn">Cerrar sesión</button>
+    </div>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" id="tab-reminders" onclick="switchTab('reminders')">
+    📋 Recordatorios
+  </button>
+  <button class="tab-btn" id="tab-countdowns" onclick="switchTab('countdowns')">
+    ⏳ Cuentas Regresivas
+  </button>
+</div>
+
+<div class="content">
+
+  <!-- ── TAB: Recordatorios ── -->
+  <div class="tab-panel active" id="panel-reminders">
+    <div class="section-header">
+      <span class="section-title">Recordatorios</span>
+      <button class="btn btn-purple" onclick="openReminderModal()">+ Nuevo recordatorio</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Título / Descripción</th>
+            <th>Fecha límite</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="remindersTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── TAB: Cuentas Regresivas ── -->
+  <div class="tab-panel" id="panel-countdowns">
+    <div class="section-header">
+      <span class="section-title section-title-cyan">Cuentas Regresivas</span>
+      <button class="btn btn-cyan" onclick="openCountdownModal()">+ Nueva cuenta regresiva</button>
+    </div>
+    <div class="cd-grid" id="countdownsGrid"></div>
+  </div>
+
+</div>
+
+<!-- ── MODAL: Recordatorio ── -->
+<div class="modal-overlay" id="reminderModal">
+  <div class="modal">
+    <h2 id="reminderModalTitle">Nuevo Recordatorio</h2>
+    <input type="hidden" id="rEditId" />
+    <div class="form-group">
+      <label>Título *</label>
+      <input type="text" id="rTitle" placeholder="¿Qué necesitas recordar?" />
+    </div>
+    <div class="form-group">
+      <label>Descripción</label>
+      <textarea id="rDesc" placeholder="Detalles opcionales..."></textarea>
+    </div>
+    <div class="form-group">
+      <label>Fecha límite</label>
+      <input type="date" id="rDate" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeReminderModal()">Cancelar</button>
+      <button class="btn btn-purple" onclick="saveReminder()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL: Cuenta Regresiva ── -->
+<div class="modal-overlay" id="countdownModal">
+  <div class="modal">
+    <h2 class="cyan" id="countdownModalTitle">Nueva Cuenta Regresiva</h2>
+    <input type="hidden" id="cdEditId" />
+    <div class="form-group">
+      <label>Nombre del evento *</label>
+      <input type="text" id="cdLabel" placeholder="Ej: Cumpleaños, Examen final..." />
+    </div>
+    <div class="form-group">
+      <label>Fecha y hora objetivo *</label>
+      <input type="datetime-local" id="cdDate" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeCountdownModal()">Cancelar</button>
+      <button class="btn btn-cyan" onclick="saveCountdown()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ─── Guard de autenticación ───────────────────────────────────────────────
+  if (!sessionStorage.getItem('admin_token')) {
+    window.location.replace('login.html');
+  }
+
+  function logout() {
+    sessionStorage.removeItem('admin_token');
+    sessionStorage.removeItem('admin_user');
+    window.location.replace('login.html');
+  }
+
+  // ─── Estado ───────────────────────────────────────────────────────────────
+  let reminders  = JSON.parse(localStorage.getItem('reminders')  || '[]');
+  let countdowns = JSON.parse(localStorage.getItem('countdowns') || '[]');
+
+  function save() {
+    localStorage.setItem('reminders',  JSON.stringify(reminders));
+    localStorage.setItem('countdowns', JSON.stringify(countdowns));
+  }
+
+  function escHtml(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function updateClock() {
+    const now = new Date();
+    document.getElementById('clock').textContent =
+      now.toLocaleDateString('es-ES', { weekday:'long', day:'2-digit', month:'long', year:'numeric' }) +
+      '  ' + now.toLocaleTimeString('es-ES');
+  }
+
+  // ─── Tabs ─────────────────────────────────────────────────────────────────
+  function switchTab(tab) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('active'); b.classList.remove('active-cyan'); });
+    document.getElementById('panel-' + tab).classList.add('active');
+    const btn = document.getElementById('tab-' + tab);
+    btn.classList.add(tab === 'countdowns' ? 'active-cyan' : 'active');
+  }
+
+  // ─── Ordenamiento por fecha ───────────────────────────────────────────────
+  function sortByDate(arr) {
+    return [...arr].sort((a, b) => {
+      if (!a.date && !b.date) return 0;
+      if (!a.date) return 1;
+      if (!b.date) return -1;
+      return new Date(a.date) - new Date(b.date);
+    });
+  }
+
+  // ─── Renderizar tabla de recordatorios ────────────────────────────────────
+  function renderRemindersTable() {
+    const tbody = document.getElementById('remindersTableBody');
+    const data  = sortByDate(reminders);
+    const now   = new Date();
+
+    if (data.length === 0) {
+      tbody.innerHTML = `<tr class="empty-row"><td colspan="4">No hay recordatorios. Crea el primero con el botón de arriba.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = data.map(r => {
+      const expired = r.date && new Date(r.date) <= now;
+      const dateStr = r.date
+        ? new Date(r.date).toLocaleDateString('es-ES', { day:'2-digit', month:'short', year:'numeric' })
+        : '—';
+
+      return `
+        <tr id="row-${r.id}">
+          <td class="td-title">
+            <div>${escHtml(r.title)}</div>
+            ${r.desc ? `<div class="desc">${escHtml(r.desc)}</div>` : ''}
+          </td>
+
+          <td style="color:${expired ? '#71717a' : '#94a3b8'};font-size:0.82rem;white-space:nowrap">
+            ${dateStr}
+            ${expired ? `<span class="badge badge-vencido" style="margin-left:6px">Vencido</span>` : ''}
+          </td>
+          <td>
+            <div class="actions-cell">
+              <button class="btn btn-ghost btn-icon" title="Editar" onclick="editReminder('${r.id}')">✏</button>
+              <button class="btn btn-danger btn-icon" title="Eliminar" onclick="confirmDeleteReminder('${r.id}')">✕</button>
+            </div>
+            <div class="confirm-row" id="confirm-r-${r.id}">
+              <span>¿Eliminar este recordatorio?</span>
+              <button class="btn btn-danger btn-sm" onclick="deleteReminder('${r.id}')">Sí, eliminar</button>
+              <button class="btn btn-ghost btn-sm" onclick="cancelConfirm('confirm-r-${r.id}')">Cancelar</button>
+            </div>
+          </td>
+        </tr>`;
+    }).join('');
+  }
+
+  // ─── Renderizar cuentas regresivas ────────────────────────────────────────
+  function renderCountdownsGrid() {
+    const grid = document.getElementById('countdownsGrid');
+    if (countdowns.length === 0) {
+      grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:#4b5563;padding:60px 0;font-size:0.85rem">
+        No hay cuentas regresivas. Crea la primera con el botón de arriba.</div>`;
+      return;
+    }
+
+    const now = Date.now();
+    grid.innerHTML = countdowns.map(cd => {
+      const target  = new Date(cd.date).getTime();
+      const diff    = target - now;
+      const expired = diff <= 0;
+
+      let body = '';
+      if (expired) {
+        body = `<div class="expired-msg">¡Fecha alcanzada!</div>`;
+      } else {
+        const days  = Math.floor(diff / 86400000);
+        const hours = Math.floor((diff % 86400000) / 3600000);
+        body = `
+          <div class="countdown-display">
+            <div class="cd-unit"><div class="cd-value">${String(days).padStart(2,'0')}</div><div class="cd-label-unit">Días</div></div>
+            <div class="cd-unit"><div class="cd-value">${String(hours).padStart(2,'0')}</div><div class="cd-label-unit">Horas</div></div>
+          </div>`;
+      }
+
+      const targetStr = new Date(cd.date).toLocaleString('es-ES', {
+        day:'2-digit', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit'
+      });
+
+      return `
+        <div class="countdown-card ${expired ? 'expired' : ''}">
+          <div class="cd-card-actions">
+            <button class="btn btn-ghost btn-icon" title="Editar" onclick="editCountdown('${cd.id}')">✏</button>
+            <button class="btn btn-danger btn-icon" title="Eliminar" onclick="deleteCountdown('${cd.id}')">✕</button>
+          </div>
+          <div class="countdown-label">${escHtml(cd.label)}</div>
+          <div class="countdown-target">📅 ${targetStr}</div>
+          ${body}
+        </div>`;
+    }).join('');
+  }
+
+  // ─── Confirmación de eliminación ──────────────────────────────────────────
+  function confirmDeleteReminder(id) {
+    document.querySelectorAll('.confirm-row').forEach(el => el.classList.remove('open'));
+    document.getElementById('confirm-r-' + id)?.classList.add('open');
+  }
+  function cancelConfirm(elId) {
+    document.getElementById(elId)?.classList.remove('open');
+  }
+
+  // ─── CRUD Recordatorios ───────────────────────────────────────────────────
+  function openReminderModal(r = null) {
+    document.getElementById('reminderModalTitle').textContent = r ? 'Editar Recordatorio' : 'Nuevo Recordatorio';
+    document.getElementById('rEditId').value   = r ? r.id       : '';
+    document.getElementById('rTitle').value    = r ? r.title    : '';
+    document.getElementById('rDesc').value     = r ? r.desc     : '';
+    document.getElementById('rDate').value     = r ? r.date.slice(0, 10) : '';
+    document.getElementById('reminderModal').classList.add('open');
+    setTimeout(() => document.getElementById('rTitle').focus(), 50);
+  }
+
+  function closeReminderModal() {
+    document.getElementById('reminderModal').classList.remove('open');
+  }
+
+  function editReminder(id) {
+    const r = reminders.find(x => x.id === id);
+    if (r) openReminderModal(r);
+  }
+
+  function saveReminder() {
+    const title = document.getElementById('rTitle').value.trim();
+    if (!title) { alert('El título es obligatorio.'); return; }
+
+    const editId = document.getElementById('rEditId').value;
+    const data = {
+      title,
+      desc:     document.getElementById('rDesc').value.trim(),
+      date:     document.getElementById('rDate').value ? document.getElementById('rDate').value + 'T23:59' : '',
+    };
+
+    if (editId) {
+      const idx = reminders.findIndex(x => x.id === editId);
+      if (idx !== -1) reminders[idx] = { ...reminders[idx], ...data };
+    } else {
+      reminders.push({ id: crypto.randomUUID(), created: Date.now(), ...data });
+    }
+
+    save();
+    renderRemindersTable();
+    closeReminderModal();
+  }
+
+  function deleteReminder(id) {
+    reminders = reminders.filter(x => x.id !== id);
+    save();
+    renderRemindersTable();
+  }
+
+  // ─── CRUD Cuentas Regresivas ───────────────────────────────────────────────
+  function openCountdownModal(cd = null) {
+    document.getElementById('countdownModalTitle').textContent = cd ? 'Editar Cuenta Regresiva' : 'Nueva Cuenta Regresiva';
+    document.getElementById('cdEditId').value = cd ? cd.id    : '';
+    document.getElementById('cdLabel').value  = cd ? cd.label : '';
+    document.getElementById('cdDate').value   = cd ? cd.date  : '';
+    document.getElementById('countdownModal').classList.add('open');
+    setTimeout(() => document.getElementById('cdLabel').focus(), 50);
+  }
+
+  function closeCountdownModal() {
+    document.getElementById('countdownModal').classList.remove('open');
+  }
+
+  function editCountdown(id) {
+    const cd = countdowns.find(x => x.id === id);
+    if (cd) openCountdownModal(cd);
+  }
+
+  function saveCountdown() {
+    const label = document.getElementById('cdLabel').value.trim();
+    const date  = document.getElementById('cdDate').value;
+    if (!label || !date) { alert('Nombre y fecha son obligatorios.'); return; }
+
+    const editId = document.getElementById('cdEditId').value;
+    if (editId) {
+      const idx = countdowns.findIndex(x => x.id === editId);
+      if (idx !== -1) countdowns[idx] = { ...countdowns[idx], label, date };
+    } else {
+      countdowns.push({ id: crypto.randomUUID(), label, date, created: Date.now() });
+    }
+
+    save();
+    renderCountdownsGrid();
+    closeCountdownModal();
+  }
+
+  function deleteCountdown(id) {
+    if (!confirm('¿Eliminar esta cuenta regresiva?')) return;
+    countdowns = countdowns.filter(x => x.id !== id);
+    save();
+    renderCountdownsGrid();
+  }
+
+  // ─── Datos de ejemplo ─────────────────────────────────────────────────────
+  function seedData() {
+    if (reminders.length === 0) {
+      const next = days => new Date(Date.now() + days * 86400000).toISOString().slice(0, 10);
+      reminders = [
+        { id: crypto.randomUUID(), title: 'Revisar correos importantes',    desc: 'Responder pendientes del cliente', date: next(0.5) + 'T23:59', created: Date.now() },
+        { id: crypto.randomUUID(), title: 'Comprar materiales del proyecto', desc: '',                               date: next(2)   + 'T23:59', created: Date.now() },
+        { id: crypto.randomUUID(), title: 'Llamar al médico',               desc: 'Cita de control anual',           date: next(5)   + 'T23:59', created: Date.now() },
+        { id: crypto.randomUUID(), title: 'Leer capítulo de libro',          desc: '',                               date: '',                   created: Date.now() },
+      ];
+    }
+    if (countdowns.length === 0) {
+      const next = days => { const d = new Date(Date.now() + days*86400000); d.setHours(0,0,0,0); return d.toISOString().slice(0,16); };
+      countdowns = [
+        { id: crypto.randomUUID(), label: '🎉 Fin de año',     date: `${new Date().getFullYear()}-12-31T23:59`, created: Date.now() },
+        { id: crypto.randomUUID(), label: '🎂 Próximo cumple', date: next(30), created: Date.now() },
+        { id: crypto.randomUUID(), label: '📚 Entrega examen', date: next(7),  created: Date.now() },
+      ];
+    }
+    save();
+  }
+
+  // ─── Cerrar modales ───────────────────────────────────────────────────────
+  document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('open'); });
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') document.querySelectorAll('.modal-overlay').forEach(o => o.classList.remove('open'));
+  });
+
+  // ─── Init ─────────────────────────────────────────────────────────────────
+  document.getElementById('activeUser').textContent =
+    '👤 ' + (sessionStorage.getItem('admin_user') || '');
+  seedData();
+  updateClock();
+  setInterval(updateClock, 1000);
+  renderRemindersTable();
+  renderCountdownsGrid();
+  setInterval(renderCountdownsGrid, 1000);
+</script>
+</body>
+</html>

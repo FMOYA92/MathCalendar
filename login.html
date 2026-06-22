@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Iniciar sesión — Admin</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #0f0f1a;
+      color: #e0e0e0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+
+    .login-card {
+      background: #1a1a2e;
+      border: 1px solid #2a2a4a;
+      border-radius: 20px;
+      padding: 44px 40px;
+      width: 380px;
+      max-width: 95vw;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+    }
+
+    .login-logo {
+      text-align: center;
+      margin-bottom: 8px;
+      font-size: 2.4rem;
+    }
+
+    .login-title {
+      text-align: center;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #a78bfa;
+      margin-bottom: 4px;
+      letter-spacing: 0.04em;
+    }
+
+    .login-sub {
+      text-align: center;
+      font-size: 0.8rem;
+      color: #4b5563;
+      margin-bottom: 32px;
+    }
+
+    .form-group { margin-bottom: 16px; }
+
+    .form-group label {
+      display: block;
+      font-size: 0.75rem;
+      color: #94a3b8;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      font-weight: 600;
+    }
+
+    .form-group input {
+      width: 100%;
+      background: #0f0f1a;
+      border: 1px solid #3a3a5a;
+      border-radius: 10px;
+      padding: 11px 14px;
+      color: #e0e0e0;
+      font-size: 0.95rem;
+      outline: none;
+      font-family: inherit;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .form-group input:focus {
+      border-color: #7c3aed;
+      box-shadow: 0 0 0 3px rgba(124,58,237,0.15);
+    }
+
+    .error-msg {
+      background: #450a0a;
+      border: 1px solid #7f1d1d;
+      color: #fca5a5;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.82rem;
+      margin-bottom: 16px;
+      display: none;
+      text-align: center;
+    }
+    .error-msg.visible { display: block; }
+
+    .btn-login {
+      width: 100%;
+      background: #4c1d95;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 13px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.2s, transform 0.1s;
+      margin-top: 8px;
+      letter-spacing: 0.03em;
+    }
+    .btn-login:hover   { background: #6d28d9; }
+    .btn-login:active  { transform: scale(0.98); }
+    .btn-login:disabled { background: #2a2a4a; color: #4b5563; cursor: not-allowed; }
+
+    .login-banner {
+      width: 100%;
+      max-width: 420px;
+      border-radius: 14px;
+      overflow: hidden;
+      margin-bottom: 20px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    }
+    .login-banner img {
+      width: 100%;
+      display: block;
+      object-fit: cover;
+    }
+
+    .btn-back {
+      display: block;
+      width: 100%;
+      text-align: center;
+      text-decoration: none;
+      background: #12121f;
+      border: 1px solid #2a2a4a;
+      color: #64748b;
+      border-radius: 10px;
+      padding: 11px;
+      font-size: 0.88rem;
+      font-family: inherit;
+      margin-top: 10px;
+      transition: background 0.2s, color 0.2s, border-color 0.2s;
+    }
+    .btn-back:hover { background: #1e1e3a; border-color: #3a3a5a; color: #94a3b8; }
+
+    .login-footer {
+      text-align: center;
+      margin-top: 24px;
+      font-size: 0.75rem;
+      color: #374151;
+    }
+  </style>
+</head>
+<body>
+
+<div class="login-banner">
+  <img src="logo.png" alt="Departamento de Matemática ACS" />
+</div>
+
+<div class="login-card">
+  <div class="login-title">Acceso Administrador</div>
+
+  <div class="error-msg" id="errorMsg">Usuario o contraseña incorrectos</div>
+
+  <div class="form-group">
+    <label>Usuario</label>
+    <input type="text" id="username" placeholder="usuario" autocomplete="username" />
+  </div>
+
+  <div class="form-group">
+    <label>Contraseña</label>
+    <input type="password" id="password" placeholder="••••••••" autocomplete="current-password" />
+  </div>
+
+  <button class="btn-login" id="loginBtn" onclick="login()">Ingresar</button>
+  <a href="index.html" class="btn-back">← Volver al panel</a>
+
+  <div class="login-footer">Panel de administración de acceso restringido</div>
+</div>
+
+<script>
+  // SHA-256 de cada contraseña (calculados offline)
+  const USERS = {
+    projas: 'd14fecb15ec07755e0fda82506e645fccba78f8ee2eac5056bb3eddb837c40c5',
+    admin:  '186cf774c97b60a1c106ef718d10970a6a06e06bef89553d9ae65d938a886eae',
+  };
+
+  // Si ya hay sesión activa, ir directo al admin
+  if (sessionStorage.getItem('admin_token')) {
+    window.location.replace('admin.html');
+  }
+
+  async function hashPassword(pwd) {
+    const buf = await crypto.subtle.digest(
+      'SHA-256',
+      new TextEncoder().encode(pwd)
+    );
+    return Array.from(new Uint8Array(buf))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+  }
+
+  function showError() {
+    document.getElementById('errorMsg').classList.add('visible');
+    document.getElementById('password').value = '';
+    document.getElementById('password').focus();
+    const btn = document.getElementById('loginBtn');
+    btn.disabled = false;
+    btn.textContent = 'Ingresar';
+  }
+
+  async function login() {
+    const btn  = document.getElementById('loginBtn');
+    const user = document.getElementById('username').value.trim().toLowerCase();
+    const pwd  = document.getElementById('password').value;
+
+    document.getElementById('errorMsg').classList.remove('visible');
+    btn.disabled = true;
+    btn.textContent = 'Verificando...';
+
+    if (!user || !pwd || !USERS[user]) {
+      showError();
+      return;
+    }
+
+    const hash = await hashPassword(pwd);
+
+    if (hash !== USERS[user]) {
+      showError();
+      return;
+    }
+
+    sessionStorage.setItem('admin_token', crypto.randomUUID());
+    sessionStorage.setItem('admin_user',  user);
+    window.location.replace('admin.html');
+  }
+
+  // Enviar con Enter desde cualquier campo
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter') login();
+  });
+
+  // Foco automático en el campo de usuario
+  window.addEventListener('load', () => {
+    document.getElementById('username').focus();
+  });
+</script>
+</body>
+</html>
