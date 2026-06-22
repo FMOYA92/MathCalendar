@@ -386,26 +386,19 @@
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-  // ─── Guard de autenticación ───────────────────────────────────────────────
-  if (!sessionStorage.getItem('admin_token')) {
-    window.location.replace('login.html');
-  }
+  const SUPABASE_URL = 'https://xwdabghkgmfoxcxsjkzo.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh3ZGFiZ2hrZ21mb3hjeHNqa3pvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxNjM2NzcsImV4cCI6MjA5NzczOTY3N30.pst6GkiZQvR8uCrZOGMo-s_DWvyA7l4QkoJcBTC0xhk';
+  const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  function logout() {
-    sessionStorage.removeItem('admin_token');
-    sessionStorage.removeItem('admin_user');
-    window.location.replace('login.html');
-  }
+  // ─── Guard de autenticación ───────────────────────────────────────────────
+  if (!sessionStorage.getItem('admin_token')) { window.location.replace('login.html'); }
+  function logout() { sessionStorage.removeItem('admin_token'); sessionStorage.removeItem('admin_user'); window.location.replace('login.html'); }
 
   // ─── Estado ───────────────────────────────────────────────────────────────
-  let reminders  = JSON.parse(localStorage.getItem('reminders')  || '[]');
-  let countdowns = JSON.parse(localStorage.getItem('countdowns') || '[]');
-
-  function save() {
-    localStorage.setItem('reminders',  JSON.stringify(reminders));
-    localStorage.setItem('countdowns', JSON.stringify(countdowns));
-  }
+  let reminders  = [];
+  let countdowns = [];
 
   function escHtml(str) {
     return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -554,32 +547,32 @@
     if (r) openReminderModal(r);
   }
 
-  function saveReminder() {
+  async function saveReminder() {
     const title = document.getElementById('rTitle').value.trim();
     if (!title) { alert('El título es obligatorio.'); return; }
-
     const editId = document.getElementById('rEditId').value;
-    const data = {
+    const payload = {
       title,
-      desc:     document.getElementById('rDesc').value.trim(),
-      date:     document.getElementById('rDate').value ? document.getElementById('rDate').value + 'T23:59' : '',
+      description: document.getElementById('rDesc').value.trim(),
+      date: document.getElementById('rDate').value ? document.getElementById('rDate').value + 'T23:59' : '',
     };
-
     if (editId) {
-      const idx = reminders.findIndex(x => x.id === editId);
-      if (idx !== -1) reminders[idx] = { ...reminders[idx], ...data };
+      const { error } = await _supabase.from('reminders').update(payload).eq('id', editId);
+      if (error) { alert('Error al guardar: ' + error.message); return; }
+      reminders = reminders.map(r => r.id === editId ? { ...r, ...payload, desc: payload.description } : r);
     } else {
-      reminders.push({ id: crypto.randomUUID(), created: Date.now(), ...data });
+      const { data, error } = await _supabase.from('reminders').insert(payload).select().single();
+      if (error) { alert('Error al guardar: ' + error.message); return; }
+      reminders.push({ ...data, desc: data.description });
     }
-
-    save();
     renderRemindersTable();
     closeReminderModal();
   }
 
-  function deleteReminder(id) {
+  async function deleteReminder(id) {
+    const { error } = await _supabase.from('reminders').delete().eq('id', id);
+    if (error) { alert('Error al eliminar: ' + error.message); return; }
     reminders = reminders.filter(x => x.id !== id);
-    save();
     renderRemindersTable();
   }
 
@@ -602,51 +595,30 @@
     if (cd) openCountdownModal(cd);
   }
 
-  function saveCountdown() {
+  async function saveCountdown() {
     const label = document.getElementById('cdLabel').value.trim();
     const date  = document.getElementById('cdDate').value;
     if (!label || !date) { alert('Nombre y fecha son obligatorios.'); return; }
-
     const editId = document.getElementById('cdEditId').value;
     if (editId) {
-      const idx = countdowns.findIndex(x => x.id === editId);
-      if (idx !== -1) countdowns[idx] = { ...countdowns[idx], label, date };
+      const { error } = await _supabase.from('countdowns').update({ label, date }).eq('id', editId);
+      if (error) { alert('Error al guardar: ' + error.message); return; }
+      countdowns = countdowns.map(c => c.id === editId ? { ...c, label, date } : c);
     } else {
-      countdowns.push({ id: crypto.randomUUID(), label, date, created: Date.now() });
+      const { data, error } = await _supabase.from('countdowns').insert({ label, date }).select().single();
+      if (error) { alert('Error al guardar: ' + error.message); return; }
+      countdowns.push(data);
     }
-
-    save();
     renderCountdownsGrid();
     closeCountdownModal();
   }
 
-  function deleteCountdown(id) {
+  async function deleteCountdown(id) {
     if (!confirm('¿Eliminar esta cuenta regresiva?')) return;
+    const { error } = await _supabase.from('countdowns').delete().eq('id', id);
+    if (error) { alert('Error al eliminar: ' + error.message); return; }
     countdowns = countdowns.filter(x => x.id !== id);
-    save();
     renderCountdownsGrid();
-  }
-
-  // ─── Datos de ejemplo ─────────────────────────────────────────────────────
-  function seedData() {
-    if (reminders.length === 0) {
-      const next = days => new Date(Date.now() + days * 86400000).toISOString().slice(0, 10);
-      reminders = [
-        { id: crypto.randomUUID(), title: 'Revisar correos importantes',    desc: 'Responder pendientes del cliente', date: next(0.5) + 'T23:59', created: Date.now() },
-        { id: crypto.randomUUID(), title: 'Comprar materiales del proyecto', desc: '',                               date: next(2)   + 'T23:59', created: Date.now() },
-        { id: crypto.randomUUID(), title: 'Llamar al médico',               desc: 'Cita de control anual',           date: next(5)   + 'T23:59', created: Date.now() },
-        { id: crypto.randomUUID(), title: 'Leer capítulo de libro',          desc: '',                               date: '',                   created: Date.now() },
-      ];
-    }
-    if (countdowns.length === 0) {
-      const next = days => { const d = new Date(Date.now() + days*86400000); d.setHours(0,0,0,0); return d.toISOString().slice(0,16); };
-      countdowns = [
-        { id: crypto.randomUUID(), label: '🎉 Fin de año',     date: `${new Date().getFullYear()}-12-31T23:59`, created: Date.now() },
-        { id: crypto.randomUUID(), label: '🎂 Próximo cumple', date: next(30), created: Date.now() },
-        { id: crypto.randomUUID(), label: '📚 Entrega examen', date: next(7),  created: Date.now() },
-      ];
-    }
-    save();
   }
 
   // ─── Cerrar modales ───────────────────────────────────────────────────────
@@ -657,14 +629,23 @@
     if (e.key === 'Escape') document.querySelectorAll('.modal-overlay').forEach(o => o.classList.remove('open'));
   });
 
+  // ─── Carga inicial desde Supabase ─────────────────────────────────────────
+  async function loadAll() {
+    const [{ data: r }, { data: c }] = await Promise.all([
+      _supabase.from('reminders').select('*'),
+      _supabase.from('countdowns').select('*'),
+    ]);
+    reminders  = (r || []).map(x => ({ ...x, desc: x.description }));
+    countdowns = c || [];
+    renderRemindersTable();
+    renderCountdownsGrid();
+  }
+
   // ─── Init ─────────────────────────────────────────────────────────────────
-  document.getElementById('activeUser').textContent =
-    '👤 ' + (sessionStorage.getItem('admin_user') || '');
-  seedData();
+  document.getElementById('activeUser').textContent = '👤 ' + (sessionStorage.getItem('admin_user') || '');
   updateClock();
   setInterval(updateClock, 1000);
-  renderRemindersTable();
-  renderCountdownsGrid();
+  loadAll();
   setInterval(renderCountdownsGrid, 1000);
 </script>
 </body>

@@ -328,10 +328,16 @@
 
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+  // ─── Supabase ─────────────────────────────────────────────────────────────
+  const SUPABASE_URL = 'https://xwdabghkgmfoxcxsjkzo.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh3ZGFiZ2hrZ21mb3hjeHNqa3pvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxNjM2NzcsImV4cCI6MjA5NzczOTY3N30.pst6GkiZQvR8uCrZOGMo-s_DWvyA7l4QkoJcBTC0xhk';
+  const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
   // ─── Estado ───────────────────────────────────────────────────────────────
-  let reminders  = JSON.parse(localStorage.getItem('reminders')  || '[]');
-  let countdowns = JSON.parse(localStorage.getItem('countdowns') || '[]');
+  let reminders  = [];
+  let countdowns = [];
 
   // ─── Carrusel recordatorios ───────────────────────────────────────────────
   const PAGE_SIZE    = 4;
@@ -586,34 +592,34 @@
     setTimeout(() => dot.classList.remove('active'), 1500);
   }
 
-  window.addEventListener('storage', e => {
-    if (e.key === 'reminders') {
-      reminders = JSON.parse(e.newValue || '[]');
-      currentPage    = 0;
-      lastTotalPages = -1;
-      renderReminders();
-      flashSync();
-    }
-    if (e.key === 'countdowns') {
-      countdowns   = JSON.parse(e.newValue || '[]');
-      cdOffset     = 0;
-      cdLastCount  = -1;
-      renderCountdowns();
-      flashSync();
-    }
-  });
+  async function loadReminders() {
+    const { data } = await _supabase.from('reminders').select('*');
+    reminders = (data || []).map(r => ({ ...r, desc: r.description }));
+    currentPage = 0; lastTotalPages = -1;
+    renderReminders();
+  }
 
-  // ─── Verificación periódica de expiración ────────────────────────────────
-  // Cada 30s comprueba si algún recordatorio venció (cuando no hay carrusel activo)
-  setInterval(() => {
-    if (!carouselTimer) renderReminders();
-  }, 30000);
+  async function loadCountdowns() {
+    const { data } = await _supabase.from('countdowns').select('*');
+    countdowns = data || [];
+    cdOffset = 0; cdLastCount = -1;
+    renderCountdowns();
+  }
+
+  _supabase.channel('db-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'reminders' }, async () => {
+      await loadReminders(); flashSync();
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'countdowns' }, async () => {
+      await loadCountdowns(); flashSync();
+    })
+    .subscribe();
 
   // ─── Init ─────────────────────────────────────────────────────────────────
   updateClock();
   setInterval(updateClock, 1000);
-  renderReminders();
-  renderCountdowns();
+  loadReminders();
+  loadCountdowns();
   setInterval(renderCountdowns, 1000);
 </script>
 </body>
