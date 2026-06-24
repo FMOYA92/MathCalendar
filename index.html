@@ -112,6 +112,20 @@
     }
     .admin-link:hover { background: #4c1d95; border-color: #7c3aed; color: #fff; }
 
+    .music-btn {
+      background: #1e1e3a;
+      border: 1px solid #3a3a5a;
+      color: #94a3b8;
+      border-radius: 8px;
+      padding: 7px 16px;
+      font-size: 0.88rem;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.2s, color 0.2s, border-color 0.2s;
+    }
+    .music-btn:hover { background: #2a2a4a; color: #e0e0e0; }
+    .music-btn.playing { border-color: #22c55e; color: #86efac; }
+
     /* ─── Layout principal ─── */
     .main { display: flex; flex: 1; overflow: hidden; }
 
@@ -297,6 +311,7 @@
     <div class="banner-right">
       <div class="bc-top">
         <span class="sync-dot" id="syncDot" title="Actualizado"></span>
+        <button class="music-btn" id="musicBtn" onclick="toggleMusic()">▶ Música</button>
         <button class="fs-btn" id="fsBtn" onclick="toggleFullscreen()">⛶ Pantalla completa</button>
         <a href="admin.html" class="admin-link">⚙ Admin</a>
       </div>
@@ -328,6 +343,8 @@
 
 </div>
 
+<div id="ytPlayerEl" style="position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;bottom:0;left:0"></div>
+<script src="https://www.youtube.com/iframe_api"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
   // ─── Supabase ─────────────────────────────────────────────────────────────
@@ -614,6 +631,32 @@
       await loadCountdowns(); flashSync();
     })
     .subscribe();
+
+  // ─── YouTube Player ───────────────────────────────────────────────────────
+  var ytPlayer;
+  function onYouTubeIframeAPIReady() {
+    ytPlayer = new YT.Player('ytPlayerEl', {
+      videoId: 'X4VbdwhkE10',
+      playerVars: { autoplay: 0, controls: 0, disablekb: 1, fs: 0,
+                    iv_load_policy: 3, modestbranding: 1,
+                    loop: 1, playlist: 'X4VbdwhkE10' },
+      events: {
+        onStateChange: function(e) {
+          const btn = document.getElementById('musicBtn');
+          if (!btn) return;
+          const playing = e.data === YT.PlayerState.PLAYING;
+          btn.textContent = playing ? '⏸ Música' : '▶ Música';
+          btn.classList.toggle('playing', playing);
+        }
+      }
+    });
+  }
+  function toggleMusic() {
+    if (!ytPlayer || typeof ytPlayer.getPlayerState !== 'function') return;
+    ytPlayer.getPlayerState() === YT.PlayerState.PLAYING
+      ? ytPlayer.pauseVideo()
+      : ytPlayer.playVideo();
+  }
 
   // ─── Init ─────────────────────────────────────────────────────────────────
   updateClock();
