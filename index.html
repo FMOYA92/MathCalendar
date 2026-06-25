@@ -306,6 +306,7 @@
     .lo-bg { position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 70% 60% at 50% 55%,rgba(30,64,175,.14) 0%,transparent 70%),radial-gradient(ellipse at 15% 65%,rgba(59,130,246,.09) 0%,transparent 50%),radial-gradient(ellipse at 85% 35%,rgba(245,158,11,.07) 0%,transparent 50%);animation:loBg 7s ease-in-out infinite; }
     @keyframes loBg { 0%,100%{opacity:.7} 50%{opacity:1.4} }
     .lo-wrap { display:flex;flex-direction:column;align-items:center;gap:24px;z-index:10;text-align:center;padding:40px; }
+    .lo-logo-wrap { display:flex;flex-direction:column;align-items:center;gap:0; }
     .lo-logo { width:600px;height:220px;animation:loLogo 4s ease-in-out infinite; }
     .lo-logo img { width:100%;height:100%;object-fit:contain; }
     @keyframes loLogo { 0%,100%{filter:drop-shadow(0 0 12px rgba(147,197,253,.25))} 50%{filter:drop-shadow(0 0 28px rgba(147,197,253,.55)) drop-shadow(0 0 55px rgba(59,130,246,.25))} }
@@ -341,10 +342,10 @@
   <canvas id="lo-cvs" style="position:absolute;inset:0;pointer-events:none"></canvas>
   <div class="lo-bg"></div>
   <div class="lo-wrap">
-    <div class="lo-logo"><img src="logo.png" alt="ACS" /></div>
-    <div class="lo-greet" id="lo-greet">Buenos días</div>
-    <div class="lo-dept">Departamento de Matemática</div>
-    <div class="lo-div"></div>
+    <div class="lo-logo-wrap">
+      <div class="lo-greet" id="lo-greet">Buenos días</div>
+      <div class="lo-logo"><img src="logo.png" alt="ACS" /></div>
+    </div>
     <div class="lo-wx" id="lo-wx">
       <div style="color:#1e293b;font-size:.82rem;letter-spacing:.06em">Obteniendo clima...</div>
     </div>
