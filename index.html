@@ -449,16 +449,17 @@
   }
   loFrame();
 
-  const ICONS = {113:'☀️',116:'⛅',119:'☁️',122:'☁️',143:'🌫️',248:'🌫️',260:'🌫️',176:'🌦️',293:'🌧️',296:'🌧️',299:'🌧️',302:'🌧️',305:'🌧️',308:'🌧️',179:'🌨️',323:'❄️',326:'❄️',329:'❄️',332:'❄️',335:'❄️',338:'❄️',200:'⛈️',386:'⛈️',389:'⛈️',392:'⛈️',395:'⛈️'};
-  fetch('https://wttr.in/La+Reina,Santiago,Chile?format=j1&lang=es&_=' + Date.now())
+  const WMO_ICON = {0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',48:'🌫️',51:'🌦️',53:'🌦️',55:'🌧️',61:'🌧️',63:'🌧️',65:'🌧️',71:'🌨️',73:'🌨️',75:'❄️',77:'❄️',80:'🌦️',81:'🌧️',82:'🌧️',85:'🌨️',86:'❄️',95:'⛈️',96:'⛈️',99:'⛈️'};
+  const WMO_DESC = {0:'Despejado',1:'Mayormente despejado',2:'Parcialmente nublado',3:'Nublado',45:'Neblina',48:'Neblina',51:'Llovizna ligera',53:'Llovizna',55:'Llovizna intensa',61:'Lluvia ligera',63:'Lluvia moderada',65:'Lluvia intensa',71:'Nieve ligera',73:'Nieve moderada',75:'Nieve intensa',77:'Granizo',80:'Chaparrones ligeros',81:'Chaparrones',82:'Chaparrones intensos',85:'Nevadas ligeras',86:'Nevadas',95:'Tormenta eléctrica',96:'Tormenta con granizo',99:'Tormenta severa'};
+  fetch('https://api.open-meteo.com/v1/forecast?latitude=-33.4569&longitude=-70.5519&current=temperature_2m,weathercode&daily=temperature_2m_max,temperature_2m_min&timezone=America%2FSantiago')
     .then(r => r.json()).then(json => {
-      const cur  = json.current_condition[0];
-      const icon = ICONS[parseInt(cur.weatherCode)] || '🌤️';
-      const desc = cur.lang_es?.[0]?.value || cur.weatherDesc[0].value;
-      const minT = json.weather[0].mintempC, maxT = json.weather[0].maxtempC;
+      const temp = Math.round(json.current.temperature_2m);
+      const code = json.current.weathercode;
+      const minT = Math.round(json.daily.temperature_2m_min[0]);
+      const maxT = Math.round(json.daily.temperature_2m_max[0]);
       document.getElementById('lo-wx').innerHTML = `
-        <div class="lo-wx-row"><span class="lo-wx-icon">${icon}</span><span class="lo-wx-temp">${cur.temp_C}°C</span></div>
-        <div class="lo-wx-desc">${desc}</div>
+        <div class="lo-wx-row"><span class="lo-wx-icon">${WMO_ICON[code]||'🌤️'}</span><span class="lo-wx-temp">${temp}°C</span></div>
+        <div class="lo-wx-desc">${WMO_DESC[code]||'Variable'}</div>
         <div class="lo-wx-mm"><span class="lo-wx-min">↓ ${minT}°C</span><span class="lo-wx-max">↑ ${maxT}°C</span></div>
         <div class="lo-wx-loc">La Reina · Santiago</div>`;
     }).catch(() => {
