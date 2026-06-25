@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Panel de Recordatorios</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #0f0f1a;
+      color: #e0e0e0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ─── Banner ─── */
+    .site-banner {
+      position: relative;
+      width: 100%;
+      height: 17vh;
+      flex-shrink: 0;
+    }
+    .site-banner::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: url('logo.png');
+      background-size: 60% auto;
+      background-position: center center;
+      background-repeat: no-repeat;
+      -webkit-mask-image:
+        linear-gradient(to right,  transparent, black 28%, black 72%, transparent),
+        linear-gradient(to bottom, transparent, black 22%, black 78%, transparent);
+      -webkit-mask-composite: source-in;
+      mask-image:
+        linear-gradient(to right,  transparent, black 28%, black 72%, transparent),
+        linear-gradient(to bottom, transparent, black 22%, black 78%, transparent);
+      mask-composite: intersect;
+    }
+
+    .banner-controls {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      display: flex;
+      flex-direction: row;
+      align-items: stretch;
+      justify-content: space-between;
+      padding: 10px 22px;
+      z-index: 2;
+    }
+    .banner-left  { display: flex; align-items: center; }
+    .banner-right { display: flex; flex-direction: column; align-items: flex-end; justify-content: space-between; }
+
+    .bc-top {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    #dateDisplay {
+      font-size: 1.5rem;
+      font-weight: 500;
+      color: #94a3b8;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.85);
+    }
+
+    .sync-dot {
+      width: 9px; height: 9px; border-radius: 50%;
+      background: #22c55e;
+      display: inline-block;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .sync-dot.active { opacity: 1; }
+
+    #clock {
+      font-size: calc(17vh - 24px);
+      font-weight: 700;
+      color: #e0e0e0;
+      font-variant-numeric: tabular-nums;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.9);
+      line-height: 1;
+      letter-spacing: 0.06em;
+    }
+
+    .fs-btn {
+      background: #1e1e3a;
+      border: 1px solid #3a3a5a;
+      color: #94a3b8;
+      border-radius: 8px;
+      padding: 7px 16px;
+      font-size: 0.88rem;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.2s, color 0.2s;
+    }
+    .fs-btn:hover { background: #2a2a4a; color: #e0e0e0; }
+
+    .admin-link {
+      background: #1e1e3a;
+      border: 1px solid #4c1d95;
+      color: #a78bfa;
+      text-decoration: none;
+      border-radius: 8px;
+      padding: 7px 16px;
+      font-size: 0.88rem;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .admin-link:hover { background: #4c1d95; border-color: #7c3aed; color: #fff; }
+
+    .music-btn {
+      background: #1e1e3a;
+      border: 1px solid #3a3a5a;
+      color: #94a3b8;
+      border-radius: 8px;
+      padding: 7px 16px;
+      font-size: 0.88rem;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.2s, color 0.2s, border-color 0.2s;
+    }
+    .music-btn:hover { background: #2a2a4a; color: #e0e0e0; }
+    .music-btn.playing { border-color: #22c55e; color: #86efac; }
+
+    /* ─── Layout principal ─── */
+    .main { display: flex; flex: 1; overflow: hidden; }
+
+    /* ─── Panel Izquierdo: Recordatorios (70%) ─── */
+    .reminders-panel {
+      width: 70%;
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid #2a2a4a;
+      overflow: hidden;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+      flex-shrink: 0;
+    }
+
+    .panel-title {
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: #a78bfa;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    .panel-title-cyan { color: #38bdf8; }
+
+    /* ─── Lista de recordatorios ─── */
+    .reminders-list {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      overflow: hidden;
+      transition: opacity 0.4s ease;
+    }
+    .reminders-list.fading { opacity: 0; }
+
+    .reminder-card {
+      background: #1a1a2e;
+      border-radius: 14px;
+      padding: 18px 22px;
+      border-left: 5px solid #7c3aed;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .reminder-card:hover { transform: translateX(4px); box-shadow: 0 4px 22px rgba(124,58,237,0.18); }
+
+    .reminder-card.urgency-red    { border-left-color: #ef4444; }
+    .reminder-card.urgency-yellow { border-left-color: #f59e0b; }
+    .reminder-card.urgency-green  { border-left-color: #22c55e; }
+    .reminder-card.urgency-none   { border-left-color: #7c3aed; }
+
+    /* Urgencia < 24h */
+    @keyframes urgentPulse {
+      0%,100% { box-shadow: none; }
+      50%      { box-shadow: 0 0 18px 5px rgba(239,68,68,0.45); }
+    }
+    .reminder-card.urgent {
+      animation: urgentPulse 2s ease-in-out infinite;
+      border-left-color: #ef4444 !important;
+    }
+
+    .reminder-title { font-size: 1.7rem; font-weight: 600; margin-bottom: 8px; word-break: break-word; line-height: 1.25; }
+    .reminder-desc  { font-size: 1.05rem; color: #94a3b8; margin-bottom: 8px; }
+
+    .reminder-meta { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .reminder-date { font-size: 1.35rem; color: #94a3b8; }
+
+    .badge {
+      font-size: 0.95rem;
+      padding: 3px 12px;
+      border-radius: 20px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .badge-urgente { background: #450a0a; color: #fca5a5; animation: urgentPulse 2s ease-in-out infinite; }
+
+    /* ─── Indicador de carrusel ─── */
+    .carousel-dots {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 0 4px;
+      flex-shrink: 0;
+      min-height: 32px;
+    }
+    .dot {
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      background: #2a2a4a;
+      transition: background 0.3s, transform 0.3s;
+    }
+    .dot.active { background: #7c3aed; transform: scale(1.3); }
+
+    /* ─── Empty state ─── */
+    .empty-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #4b5563;
+      gap: 10px;
+    }
+    .empty-state svg { width: 64px; height: 64px; opacity: 0.35; }
+    .empty-state span { font-size: 1.1rem; }
+
+    /* ─── Panel Derecho: Cuentas Regresivas (30%) ─── */
+    .countdowns-panel {
+      width: 30%;
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .countdowns-list {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+      perspective: 1400px;
+    }
+
+    .countdowns-track {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: transform 0.9s cubic-bezier(0.34, 1.56, 0.64, 1),
+                  filter 0.35s ease;
+      will-change: transform, filter;
+    }
+
+    .countdowns-track.sliding {
+      filter: blur(2px) brightness(0.75);
+    }
+
+    .countdown-card {
+      background: #0f172a;
+      border-radius: 14px;
+      padding: 14px;
+      border: 1px solid #1e3a5f;
+      flex-shrink: 0;
+      height: var(--cd-card-h, auto);
+      box-sizing: border-box;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .cd-info { flex: 1; min-width: 0; }
+
+    .countdown-label {
+      font-size: 1.1rem;
+      color: #7dd3fc;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .countdown-target { font-size: 0.95rem; color: #64748b; }
+
+    .cd-num { flex-shrink: 0; width: 76px; background: #1e293b; border-radius: 10px; padding: 8px 4px; text-align: center; }
+    .cd-value { font-size: 2rem; font-weight: 700; color: #38bdf8; font-variant-numeric: tabular-nums; line-height: 1; }
+    .cd-label { font-size: 0.82rem; color: #64748b; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
+  </style>
+</head>
+<body>
+
+<div class="site-banner">
+  <div class="banner-controls">
+    <div class="banner-left">
+      <div id="clock"></div>
+    </div>
+    <div class="banner-right">
+      <div class="bc-top">
+        <span class="sync-dot" id="syncDot" title="Actualizado"></span>
+        <button class="fs-btn" id="fsBtn" onclick="toggleFullscreen()">⛶ Pantalla completa</button>
+        <a href="admin.html" class="admin-link">⚙ Admin</a>
+      </div>
+      <button class="music-btn" id="musicBtn" onclick="toggleMusic()">▶ Música</button>
+      <div id="dateDisplay"></div>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- Panel izquierdo: Recordatorios -->
+  <section class="reminders-panel">
+    <div class="panel-header">
+      <span class="panel-title">Recordatorios</span>
+    </div>
+    <div class="reminders-list" id="remindersList"></div>
+    <div class="carousel-dots" id="carouselDots"></div>
+  </section>
+
+  <!-- Panel derecho: Cuentas Regresivas -->
+  <section class="countdowns-panel">
+    <div class="panel-header">
+      <span class="panel-title panel-title-cyan">Cuentas Regresivas</span>
+    </div>
+    <div class="countdowns-list" id="countdownsList">
+      <div class="countdowns-track" id="countdownsTrack"></div>
+    </div>
+  </section>
+
+</div>
+
+<div id="ytPlayerEl" style="position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;bottom:0;left:0"></div>
+<script src="https://www.youtube.com/iframe_api"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  // ─── Supabase ─────────────────────────────────────────────────────────────
+  const SUPABASE_URL = 'https://xwdabghkgmfoxcxsjkzo.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh3ZGFiZ2hrZ21mb3hjeHNqa3pvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxNjM2NzcsImV4cCI6MjA5NzczOTY3N30.pst6GkiZQvR8uCrZOGMo-s_DWvyA7l4QkoJcBTC0xhk';
+  const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  // ─── Estado ───────────────────────────────────────────────────────────────
+  let reminders  = [];
+  let countdowns = [];
+
+  // ─── Carrusel recordatorios ───────────────────────────────────────────────
+  const PAGE_SIZE    = 4;
+  let currentPage    = 0;
+  let carouselTimer  = null;
+  let lastTotalPages = -1;
+
+  // ─── Carrusel cuentas regresivas ─────────────────────────────────────────
+  let cdOffset    = 0;
+  let cdSlideTimer = null;
+  let cdLastCount = -1;
+  let cdCardH     = 0;
+  let cdJustSlid  = false;   // protege el spring de ser interrumpido por re-renders
+
+  // ─── Reloj ────────────────────────────────────────────────────────────────
+  function updateClock() {
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('es-ES', { weekday:'long', day:'2-digit', month:'long' });
+    document.getElementById('dateDisplay').textContent =
+      dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
+    const h = String(now.getHours()).padStart(2, '0');
+    const m = String(now.getMinutes()).padStart(2, '0');
+    document.getElementById('clock').textContent = `${h}:${m}`;
+  }
+
+  // ─── Utilidades ───────────────────────────────────────────────────────────
+  function escHtml(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function getActiveReminders() {
+    const now = new Date();
+    return reminders
+      .filter(r => !r.date || new Date(r.date) > now)
+      .sort((a, b) => {
+        if (!a.date && !b.date) return 0;
+        if (!a.date) return 1;
+        if (!b.date) return -1;
+        return new Date(a.date) - new Date(b.date);
+      });
+  }
+
+  // ─── Carrusel ─────────────────────────────────────────────────────────────
+  function startCarousel(totalPages) {
+    if (totalPages === lastTotalPages) return;
+    lastTotalPages = totalPages;
+    clearInterval(carouselTimer);
+    carouselTimer = null;
+    if (totalPages <= 1) return;
+    carouselTimer = setInterval(advancePage, 12000);
+  }
+
+  function advancePage() {
+    const data       = getActiveReminders();
+    const totalPages = Math.ceil(data.length / PAGE_SIZE) || 1;
+    if (totalPages <= 1) return;
+
+    const list = document.getElementById('remindersList');
+    list.classList.add('fading');
+    setTimeout(() => {
+      currentPage = (currentPage + 1) % totalPages;
+      renderReminders();
+      requestAnimationFrame(() => list.classList.remove('fading'));
+    }, 400);
+  }
+
+  // ─── Renderizar recordatorios ─────────────────────────────────────────────
+  function renderReminders() {
+    const list      = document.getElementById('remindersList');
+    const dotsEl    = document.getElementById('carouselDots');
+    const data      = getActiveReminders();
+    const totalPages = Math.ceil(data.length / PAGE_SIZE) || 1;
+
+    if (currentPage >= totalPages) currentPage = 0;
+
+    startCarousel(totalPages);
+
+    // Dots
+    dotsEl.innerHTML = totalPages > 1
+      ? Array.from({ length: totalPages }, (_, i) =>
+          `<span class="dot ${i === currentPage ? 'active' : ''}"></span>`
+        ).join('')
+      : '';
+
+    if (data.length === 0) {
+      list.innerHTML = `
+        <div class="empty-state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2
+                 M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+          </svg>
+          <span>Sin recordatorios activos</span>
+        </div>`;
+      return;
+    }
+
+    const pageData = data.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE);
+
+    list.innerHTML = pageData.map(r => {
+      const now      = new Date();
+      const msLeft   = r.date ? (new Date(r.date) - now) : Infinity;
+      const daysLeft = msLeft / 86400000;
+      const urgent   = daysLeft > 0 && daysLeft < 1;
+
+      let urgencyClass = 'urgency-none';
+      if (r.date) {
+        if (daysLeft <= 2)      urgencyClass = 'urgency-red';
+        else if (daysLeft <= 5) urgencyClass = 'urgency-yellow';
+        else                    urgencyClass = 'urgency-green';
+      }
+
+      const dateStr = r.date
+        ? new Date(r.date).toLocaleDateString('es-ES', { day:'2-digit', month:'long', year:'numeric' })
+        : '';
+
+      return `
+        <div class="reminder-card ${urgencyClass} ${urgent ? 'urgent' : ''}">
+          <div class="reminder-title">${escHtml(r.title)}</div>
+          ${r.desc ? `<div class="reminder-desc">${escHtml(r.desc)}</div>` : ''}
+          <div class="reminder-meta">
+            ${dateStr ? `<span class="reminder-date">📅 ${dateStr}</span>` : ''}
+            ${urgent ? `<span class="badge badge-urgente">¡Hoy!</span>` : ''}
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // ─── Carrusel cuentas regresivas: avanzar un slot ────────────────────────
+  function advanceCd(count) {
+    const track = document.getElementById('countdownsTrack');
+    if (!track) return;
+    cdOffset = (cdOffset < count - 4) ? cdOffset + 1 : 0;
+
+    // Proteger el spring contra interrupciones de renderCountdowns
+    cdJustSlid = true;
+    track.classList.add('sliding');
+    track.style.transform = `translate3d(0, -${cdOffset * cdCardH}px, 0)`;
+
+    // Quitar blur a los 350ms; liberar protección cuando el spring termina (~1s)
+    setTimeout(() => track.classList.remove('sliding'), 350);
+    setTimeout(() => { cdJustSlid = false; }, 1000);
+  }
+
+  function setupCdSlider(count) {
+    if (count === cdLastCount) return;
+    cdLastCount = count;
+    clearInterval(cdSlideTimer);
+    cdSlideTimer = null;
+    cdOffset = 0;
+    if (count <= 4) return;
+    cdSlideTimer = setInterval(() => advanceCd(count), 10000);
+  }
+
+  // ─── Renderizar cuentas regresivas ────────────────────────────────────────
+  function renderCountdowns() {
+    const list  = document.getElementById('countdownsList');
+    const track = document.getElementById('countdownsTrack');
+    const now   = Date.now();
+
+    // Filter expired, then sort closest first
+    const sorted = [...countdowns]
+      .filter(cd => new Date(cd.date).getTime() > now)
+      .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    if (sorted.length === 0) {
+      track.innerHTML = `<div class="empty-state" style="padding-top:30px;color:#2a4a5a">
+        <span style="font-size:3rem">⏳</span>
+        <span>Sin cuentas regresivas</span>
+      </div>`;
+      clearInterval(cdSlideTimer);
+      cdSlideTimer = null;
+      cdLastCount  = -1;
+      cdOffset     = 0;
+      return;
+    }
+
+    // 4 cards + 3 gaps of 10px fill the container; slot = card + gap
+    const CD_GAP = 10;
+    const listH  = list.clientHeight;
+    if (listH > 0) {
+      const cardH = (listH - 3 * CD_GAP) / 4;
+      cdCardH = cardH + CD_GAP;            // slot used for translateY
+      list.style.setProperty('--cd-card-h', cardH + 'px');
+    }
+
+    track.innerHTML = sorted.map(cd => {
+      const diff = new Date(cd.date).getTime() - now;
+
+      let value, unit;
+      if (diff < 3600000) {
+        value = Math.floor(diff / 60000);
+        unit  = 'Min';
+      } else if (diff < 86400000) {
+        value = Math.floor(diff / 3600000);
+        unit  = 'Horas';
+      } else {
+        value = Math.floor(diff / 86400000);
+        unit  = 'Días';
+      }
+
+      const targetStr = new Date(cd.date).toLocaleString('es-ES', {
+        day:'2-digit', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit'
+      });
+
+      return `
+        <div class="countdown-card">
+          <div class="cd-info">
+            <div class="countdown-label">${escHtml(cd.label)}</div>
+            <div class="countdown-target">📅 ${targetStr}</div>
+          </div>
+          <div class="cd-num">
+            <div class="cd-value">${String(value).padStart(2,'0')}</div>
+            <div class="cd-label">${unit}</div>
+          </div>
+        </div>`;
+    }).join('');
+
+    // Snap a posición actual — pero NO interrumpir si hay un spring en curso
+    if (cdOffset >= sorted.length) { cdOffset = 0; cdJustSlid = false; }
+    if (!cdJustSlid) {
+      track.style.transition = 'none';
+      track.style.transform  = `translate3d(0, -${cdOffset * cdCardH}px, 0)`;
+      void track.offsetHeight;
+      track.style.transition = '';
+    }
+
+    setupCdSlider(sorted.length);
+  }
+
+  // ─── Pantalla completa ────────────────────────────────────────────────────
+  function toggleFullscreen() {
+    const btn = document.getElementById('fsBtn');
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen();
+      btn.textContent = '⛶ Salir';
+    } else {
+      document.exitFullscreen();
+      btn.textContent = '⛶ Pantalla completa';
+    }
+  }
+
+  document.addEventListener('fullscreenchange', () => {
+    if (!document.fullscreenElement)
+      document.getElementById('fsBtn').textContent = '⛶ Pantalla completa';
+  });
+
+  // ─── Sincronización en tiempo real ───────────────────────────────────────
+  function flashSync() {
+    const dot = document.getElementById('syncDot');
+    dot.classList.add('active');
+    setTimeout(() => dot.classList.remove('active'), 1500);
+  }
+
+  async function loadReminders() {
+    const { data } = await _supabase.from('reminders').select('*');
+    reminders = (data || []).map(r => ({ ...r, desc: r.description }));
+    currentPage = 0; lastTotalPages = -1;
+    renderReminders();
+  }
+
+  async function loadCountdowns() {
+    const { data } = await _supabase.from('countdowns').select('*');
+    countdowns = data || [];
+    cdOffset = 0; cdLastCount = -1;
+    renderCountdowns();
+  }
+
+  _supabase.channel('db-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'reminders' }, async () => {
+      await loadReminders(); flashSync();
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'countdowns' }, async () => {
+      await loadCountdowns(); flashSync();
+    })
+    .subscribe();
+
+  // ─── YouTube Player ───────────────────────────────────────────────────────
+  var ytPlayer;
+  function onYouTubeIframeAPIReady() {
+    ytPlayer = new YT.Player('ytPlayerEl', {
+      videoId: 'X4VbdwhkE10',
+      playerVars: { autoplay: 0, controls: 0, disablekb: 1, fs: 0,
+                    iv_load_policy: 3, modestbranding: 1,
+                    loop: 1, playlist: 'X4VbdwhkE10' },
+      events: {
+        onStateChange: function(e) {
+          const btn = document.getElementById('musicBtn');
+          if (!btn) return;
+          const playing = e.data === YT.PlayerState.PLAYING;
+          btn.textContent = playing ? '⏸ Música' : '▶ Música';
+          btn.classList.toggle('playing', playing);
+        }
+      }
+    });
+  }
+  function toggleMusic() {
+    if (!ytPlayer || typeof ytPlayer.getPlayerState !== 'function') return;
+    ytPlayer.getPlayerState() === YT.PlayerState.PLAYING
+      ? ytPlayer.pauseVideo()
+      : ytPlayer.playVideo();
+  }
+
+  // ─── Init ─────────────────────────────────────────────────────────────────
+  updateClock();
+  setInterval(updateClock, 1000);
+  loadReminders();
+  loadCountdowns();
+  setInterval(renderCountdowns, 1000);
+</script>
+</body>
+</html>
