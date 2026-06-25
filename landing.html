@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bienvenido — Departamento de Matemática</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #060610;
+      color: #e0e0e0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      transition: opacity 1.2s ease;
+    }
+    body.fade-out { opacity: 0; }
+
+    /* ─── Fondo con resplandor radial animado ─── */
+    .bg-glow {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(ellipse 70% 60% at 50% 55%, rgba(30,64,175,0.14) 0%, transparent 70%),
+        radial-gradient(ellipse at 15% 65%, rgba(59,130,246,0.09) 0%, transparent 50%),
+        radial-gradient(ellipse at 85% 35%, rgba(245,158,11,0.07) 0%, transparent 50%);
+      animation: bgBreath 7s ease-in-out infinite;
+    }
+    @keyframes bgBreath {
+      0%,100% { opacity: 0.7; }
+      50%      { opacity: 1.4; }
+    }
+
+    /* ─── Contenedor central ─── */
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+      z-index: 10;
+      text-align: center;
+      padding: 40px;
+    }
+
+    /* ─── Logo ─── */
+    .logo-wrap {
+      width: 600px;
+      height: 220px;
+      animation: logoGlow 4s ease-in-out infinite;
+    }
+    .logo-wrap img { width: 100%; height: 100%; object-fit: contain; }
+    @keyframes logoGlow {
+      0%,100% { filter: drop-shadow(0 0 12px rgba(147,197,253,0.25)); }
+      50%      { filter: drop-shadow(0 0 28px rgba(147,197,253,0.55))
+                         drop-shadow(0 0 55px rgba(59,130,246,0.25)); }
+    }
+
+    /* ─── Saludo ─── */
+    .greeting {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 7rem;
+      font-weight: 400;
+      color: #fbbf24;
+      letter-spacing: 0.08em;
+      line-height: 1;
+      animation: greetGlow 3s ease-in-out infinite;
+    }
+    @keyframes greetGlow {
+      0%,100% { text-shadow: 0 0 18px rgba(251,191,36,0.35), 0 0 40px rgba(251,191,36,0.12); }
+      50%      { text-shadow: 0 0 30px rgba(251,191,36,0.75), 0 0 80px rgba(251,191,36,0.38), 0 0 130px rgba(251,191,36,0.16); }
+    }
+
+    /* ─── Nombre (shimmer) ─── */
+    .dept {
+      font-size: 1.85rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      background: linear-gradient(90deg,
+        #60a5fa 0%, #93c5fd 30%,
+        #e0f2fe 50%,
+        #93c5fd 70%, #60a5fa 100%);
+      background-size: 250% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: shimmer 5s linear infinite;
+    }
+    @keyframes shimmer {
+      0%   { background-position: 250% center; }
+      100% { background-position: -250% center; }
+    }
+
+    /* ─── Divisor ─── */
+    .divider {
+      position: relative;
+      width: 200px;
+      height: 1px;
+      background: linear-gradient(to right, transparent, #f59e0b, transparent);
+      animation: divGlow 3s ease-in-out infinite;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: #f59e0b;
+      transform: translateY(-50%);
+      box-shadow: 0 0 8px #f59e0b, 0 0 18px rgba(245,158,11,0.7);
+    }
+    .divider::before { left: 0; }
+    .divider::after  { right: 0; }
+    @keyframes divGlow {
+      0%,100% { opacity: 0.45; box-shadow: none; }
+      50%      { opacity: 1;    box-shadow: 0 0 14px rgba(245,158,11,0.55); }
+    }
+
+    /* ─── Tarjeta del clima ─── */
+    .weather {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      min-height: 96px;
+      justify-content: center;
+      background: rgba(59,130,246,0.05);
+      border: 1px solid rgba(147,197,253,0.12);
+      border-radius: 22px;
+      padding: 20px 42px;
+      animation: cardGlow 4s ease-in-out infinite;
+    }
+    @keyframes cardGlow {
+      0%,100% { box-shadow: 0 0 18px rgba(59,130,246,0.08), inset 0 0 18px rgba(59,130,246,0.04);
+                border-color: rgba(147,197,253,0.12); }
+      50%      { box-shadow: 0 0 40px rgba(59,130,246,0.22), inset 0 0 30px rgba(59,130,246,0.09);
+                border-color: rgba(147,197,253,0.3); }
+    }
+    .weather-main { display: flex; align-items: center; gap: 14px; }
+    .weather-icon { font-size: 2.6rem; line-height: 1; }
+    .weather-temp {
+      font-size: 3rem; font-weight: 700; color: #fbbf24;
+      font-variant-numeric: tabular-nums;
+      text-shadow: 0 0 16px rgba(251,191,36,0.5);
+    }
+    .weather-desc { font-size: 0.92rem; color: #94a3b8; margin-top: 4px; }
+    .weather-minmax {
+      display: flex; gap: 18px; margin-top: 2px;
+      font-size: 0.85rem; font-variant-numeric: tabular-nums;
+    }
+    .weather-min { color: #60a5fa; }
+    .weather-max { color: #fbbf24; }
+    .weather-loc  { font-size: 0.72rem; color: #334155; letter-spacing: 0.1em; text-transform: uppercase; }
+
+    /* ─── Barra de progreso ─── */
+    .progress-wrap {
+      width: 340px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+    .progress-bar {
+      width: 100%; height: 3px;
+      background: #0e0e22;
+      border-radius: 2px;
+      overflow: visible;
+      position: relative;
+    }
+    .progress-fill {
+      height: 100%; width: 0%;
+      background: linear-gradient(to right, #3b82f6, #fbbf24);
+      border-radius: 2px;
+      position: relative;
+      box-shadow: 0 0 8px #3b82f6, 0 0 18px rgba(251,191,36,0.45);
+    }
+    .progress-fill::after {
+      content: '';
+      position: absolute;
+      right: -2px; top: 50%;
+      transform: translateY(-50%);
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #fbbf24;
+      box-shadow: 0 0 10px #fbbf24, 0 0 24px rgba(251,191,36,0.8);
+    }
+    .progress-label {
+      font-size: 0.71rem;
+      color: #1e293b;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="cvs" style="position:fixed;inset:0;pointer-events:none;z-index:1"></canvas>
+<div class="bg-glow"></div>
+
+<div class="container">
+  <div class="logo-wrap">
+    <img src="logo.png" alt="Departamento de Matemática ACS" />
+  </div>
+
+  <div class="greeting" id="greeting">Buenos días</div>
+  <div class="dept">Departamento de Matemática</div>
+  <div class="divider"></div>
+
+  <div class="weather" id="weather">
+    <div style="color:#1e293b;font-size:0.82rem;letter-spacing:0.06em">Obteniendo clima...</div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+    <div class="progress-label" id="progressLabel">Cargando panel...</div>
+  </div>
+</div>
+
+<script>
+  // ─── Saludo dinámico ──────────────────────────────────────────────────────
+  (function() {
+    const h = new Date().getHours();
+    document.getElementById('greeting').textContent =
+      h >= 5 && h < 12  ? 'Buenos días'   :
+      h >= 12 && h < 20 ? 'Buenas tardes' : 'Buenas noches';
+  })();
+
+  // ─── Canvas: estrellas + partículas ──────────────────────────────────────
+  const cvs = document.getElementById('cvs');
+  const ctx  = cvs.getContext('2d');
+
+  function resize() { cvs.width = innerWidth; cvs.height = innerHeight; }
+  resize();
+  window.addEventListener('resize', resize);
+
+  // Estrellas fijas con parpadeo
+  const STARS = Array.from({ length: 130 }, () => ({
+    x:     Math.random(),
+    y:     Math.random(),
+    r:     Math.random() * 1.1 + 0.2,
+    base:  Math.random() * 0.55 + 0.1,
+    phase: Math.random() * Math.PI * 2,
+    speed: Math.random() * 0.018 + 0.004,
+    gold:  Math.random() < 0.28,
+  }));
+
+  // Partículas que ascienden
+  const PARTS = Array.from({ length: 55 }, () => ({
+    x:    Math.random(),
+    life: Math.random(),
+    r:    Math.random() * 1.7 + 0.3,
+    spd:  Math.random() * 0.00028 + 0.0001,
+    drft: (Math.random() - 0.5) * 0.00018,
+    base: Math.random() * 0.42 + 0.12,
+    gold: Math.random() < 0.42,
+  }));
+
+  function frame() {
+    ctx.clearRect(0, 0, cvs.width, cvs.height);
+
+    // Estrellas
+    STARS.forEach(s => {
+      s.phase += s.speed;
+      const a = s.base * (0.45 + 0.55 * Math.sin(s.phase));
+      ctx.globalAlpha = a;
+      ctx.beginPath();
+      ctx.arc(s.x * cvs.width, s.y * cvs.height, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = s.gold ? '#fbbf24' : '#93c5fd';
+      ctx.shadowBlur  = s.r > 0.8 ? 6 : 0;
+      ctx.shadowColor = s.gold ? '#fbbf24' : '#93c5fd';
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    });
+
+    // Partículas flotantes
+    PARTS.forEach(p => {
+      p.life += p.spd;
+      p.x    += p.drft;
+      if (p.life > 1 || p.x < -0.04 || p.x > 1.04) {
+        p.life = 0; p.x = Math.random();
+      }
+      const vy = 1 - p.life;
+      const a  = p.life < 0.12 ? (p.life / 0.12) * p.base
+               : p.life > 0.82 ? ((1 - p.life) / 0.18) * p.base
+               : p.base;
+      ctx.globalAlpha = a;
+      ctx.beginPath();
+      ctx.arc(p.x * cvs.width, vy * cvs.height, p.r, 0, Math.PI * 2);
+      ctx.fillStyle   = p.gold ? '#fbbf24' : '#93c5fd';
+      ctx.shadowBlur  = 12;
+      ctx.shadowColor = p.gold ? '#f59e0b' : '#60a5fa';
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    });
+
+    ctx.globalAlpha = 1;
+    requestAnimationFrame(frame);
+  }
+  frame();
+
+  // ─── Clima ────────────────────────────────────────────────────────────────
+  const ICONS = {
+    113:'☀️', 116:'⛅', 119:'☁️', 122:'☁️',
+    143:'🌫️', 248:'🌫️', 260:'🌫️',
+    176:'🌦️', 293:'🌧️', 296:'🌧️', 299:'🌧️', 302:'🌧️', 305:'🌧️', 308:'🌧️',
+    179:'🌨️', 323:'❄️', 326:'❄️', 329:'❄️', 332:'❄️', 335:'❄️', 338:'❄️',
+    200:'⛈️', 386:'⛈️', 389:'⛈️', 392:'⛈️', 395:'⛈️',
+  };
+  fetch('https://wttr.in/La+Reina,Santiago,Chile?format=j1&lang=es')
+    .then(r => r.json())
+    .then(json => {
+      const cur  = json.current_condition[0];
+      const icon = ICONS[parseInt(cur.weatherCode)] || '🌤️';
+      const desc = cur.lang_es?.[0]?.value || cur.weatherDesc[0].value;
+      const minT = json.weather[0].mintempC;
+      const maxT = json.weather[0].maxtempC;
+      document.getElementById('weather').innerHTML = `
+        <div class="weather-main">
+          <span class="weather-icon">${icon}</span>
+          <span class="weather-temp">${cur.temp_C}°C</span>
+        </div>
+        <div class="weather-desc">${desc}</div>
+        <div class="weather-minmax">
+          <span class="weather-min">↓ ${minT}°C</span>
+          <span class="weather-max">↑ ${maxT}°C</span>
+        </div>
+        <div class="weather-loc">La Reina · Santiago</div>`;
+    })
+    .catch(() => {
+      document.getElementById('weather').innerHTML =
+        `<div style="color:#1e293b;font-size:0.85rem">Clima no disponible</div>`;
+    });
+
+  // ─── Progreso + redirección ───────────────────────────────────────────────
+  const TOTAL = 15000, start = Date.now();
+  function tick() {
+    const el   = Date.now() - start;
+    const pct  = Math.min((el / TOTAL) * 100, 100);
+    const secs = Math.max(Math.ceil((TOTAL - el) / 1000), 0);
+    document.getElementById('progressFill').style.width = pct + '%';
+    document.getElementById('progressLabel').textContent =
+      secs > 0 ? `Abriendo panel en ${secs}s` : 'Abriendo...';
+    if (el >= TOTAL - 1200) document.body.classList.add('fade-out');
+    if (el >= TOTAL) { window.location.replace('index.html'); return; }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+</script>
+</body>
+</html>
