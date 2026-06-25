@@ -450,7 +450,7 @@
   loFrame();
 
   const ICONS = {113:'☀️',116:'⛅',119:'☁️',122:'☁️',143:'🌫️',248:'🌫️',260:'🌫️',176:'🌦️',293:'🌧️',296:'🌧️',299:'🌧️',302:'🌧️',305:'🌧️',308:'🌧️',179:'🌨️',323:'❄️',326:'❄️',329:'❄️',332:'❄️',335:'❄️',338:'❄️',200:'⛈️',386:'⛈️',389:'⛈️',392:'⛈️',395:'⛈️'};
-  fetch('https://wttr.in/La+Reina,Santiago,Chile?format=j1&lang=es')
+  fetch('https://wttr.in/La+Reina,Santiago,Chile?format=j1&lang=es&_=' + Date.now())
     .then(r => r.json()).then(json => {
       const cur  = json.current_condition[0];
       const icon = ICONS[parseInt(cur.weatherCode)] || '🌤️';
@@ -465,7 +465,7 @@
       document.getElementById('lo-wx').innerHTML = '<div style="color:#1e293b;font-size:.85rem">Clima no disponible</div>';
     });
 
-  const TOTAL = 15000, start = Date.now();
+  const TOTAL = 13000, start = Date.now();
   function loTick() {
     const el   = Date.now() - start;
     const pct  = Math.min((el / TOTAL) * 100, 100);
